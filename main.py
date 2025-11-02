@@ -392,21 +392,88 @@ class AudioTranscriber:
         
         return "\n".join(formatted)
     
-    def summarize(self, text: str, max_length: int = 200) -> str:
-        with tqdm(desc="Generating summary", unit="step", total=1) as pbar:
-            max_input = 1024
-            if len(text) > max_input:
-                text = text[:max_input]
-            
-            try:
-                start_time = time.time()
-                summary = self.summarizer(text, max_length=max_length, min_length=50, do_sample=False)
+    def summarize(self, text: str, max_length: int = None) -> str:
+        if max_length is None:
+            max_length = int(os.getenv("SUMMARY_MAX_LENGTH", "400"))
+        
+        max_input = 1024
+        if len(text) > max_input:
+            text = text[:max_input]
+        
+        min_length = max(50, max_length // 4)
+        
+        try:
+            summary = self.summarizer(text, max_length=max_length, min_length=min_length, do_sample=False)
+            return summary[0]["summary_text"]
+        except Exception as e:
+            print(f"Error during summarization: {e}")
+            return "Summary not available."
+    
+    def summarize_by_speaker(self, segments: List[Dict], max_length: int = None) -> str:
+        """Group segments by speaker and summarize each speaker's contributions."""
+        if max_length is None:
+            max_length = int(os.getenv("SUMMARY_MAX_LENGTH", "400"))
+        
+        speaker_texts = {}
+        
+        for seg in segments:
+            speaker = seg.get("speaker", "SPEAKER_UNKNOWN")
+            text = seg.get("text", "").strip()
+            if text:
+                if speaker not in speaker_texts:
+                    speaker_texts[speaker] = []
+                speaker_texts[speaker].append(text)
+        
+        if not speaker_texts:
+            return "No content to summarize."
+        
+        summaries = []
+        total_speakers = len(speaker_texts)
+        max_input = 1024
+        
+        with tqdm(desc="Generating summary by speaker", total=total_speakers, unit="speaker") as pbar:
+            for speaker, texts in sorted(speaker_texts.items()):
+                speaker_content = " ".join(texts)
+                
+                try:
+                    if len(speaker_content) > max_input:
+                        chunk_summaries = []
+                        words = speaker_content.split()
+                        current_chunk = []
+                        current_length = 0
+                        
+                        for word in words:
+                            word_length = len(word) + 1
+                            if current_length + word_length > max_input and current_chunk:
+                                chunk_text = " ".join(current_chunk)
+                                chunk_summary = self.summarize(chunk_text, max_length=max_length // 2)
+                                chunk_summaries.append(chunk_summary)
+                                current_chunk = [word]
+                                current_length = word_length
+                            else:
+                                current_chunk.append(word)
+                                current_length += word_length
+                        
+                        if current_chunk:
+                            chunk_text = " ".join(current_chunk)
+                            chunk_summary = self.summarize(chunk_text, max_length=max_length // 2)
+                            chunk_summaries.append(chunk_summary)
+                        
+                        combined_chunks = " ".join(chunk_summaries)
+                        if len(combined_chunks) > max_input:
+                            summary_text = self.summarize(combined_chunks, max_length=max_length)
+                        else:
+                            summary_text = combined_chunks
+                    else:
+                        summary_text = self.summarize(speaker_content, max_length=max_length)
+                    
+                    summaries.append(f"{speaker}: {summary_text}")
+                except Exception as e:
+                    summaries.append(f"{speaker}: Errore durante la sintesi ({e})")
+                
                 pbar.update(1)
-                pbar.set_postfix({"time": f"{time.time() - start_time:.1f}s"})
-                return summary[0]["summary_text"]
-            except Exception as e:
-                print(f"Error during summarization: {e}")
-                return "Summary not available."
+        
+        return "\n\n".join(summaries)
     
     def process_audio(self, audio_path: str, output_dir: str = "output", language: str = "it") -> Dict:
         total_start_time = time.time()
@@ -463,11 +530,11 @@ class AudioTranscriber:
             
             main_pbar.set_description("Generating summary")
             step_start = time.time()
-            full_text = transcription["text"]
-            summary = self.summarize(full_text)
+            summary = self.summarize_by_speaker(segments)
             step_times["summarize"] = time.time() - step_start
             main_pbar.update(1)
             
+            full_text = transcription["text"]
             results = {
                 "transcript": formatted_transcript,
                 "summary": summary,
@@ -516,6 +583,7 @@ def main():
     parser.add_argument("--language", type=str, default="it", help="Language code for transcription (e.g., it, en, es, fr, de). Default: it (Italian)")
     parser.add_argument("--min-speakers", type=int, default=None, help="Minimum number of speakers (uses MIN_SPEAKERS env var if not specified)")
     parser.add_argument("--max-speakers", type=int, default=None, help="Maximum number of speakers (uses MAX_SPEAKERS env var if not specified)")
+    parser.add_argument("--summary-max-length", type=int, default=None, help="Maximum length for summary per speaker (uses SUMMARY_MAX_LENGTH env var if not specified, default: 400)")
     
     args = parser.parse_args()
     hf_token = args.hf_token or os.getenv("HF_TOKEN")
@@ -524,6 +592,8 @@ def main():
         os.environ["MIN_SPEAKERS"] = str(args.min_speakers)
     if args.max_speakers is not None:
         os.environ["MAX_SPEAKERS"] = str(args.max_speakers)
+    if args.summary_max_length is not None:
+        os.environ["SUMMARY_MAX_LENGTH"] = str(args.summary_max_length)
     
     transcriber = AudioTranscriber(whisper_model=args.whisper_model, hf_token=hf_token, device=args.device)
     transcriber.process_audio(audio_path=args.audio_file, output_dir=args.output_dir, language=args.language)

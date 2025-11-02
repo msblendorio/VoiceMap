@@ -61,7 +61,16 @@ Create a `.env` file in the project root:
 
 ```
 HF_TOKEN=hf_yourtokenhere
+SUMMARY_MAX_LENGTH=500
+MIN_SPEAKERS=2
+MAX_SPEAKERS=5
 ```
+
+### Optional Environment Variables
+
+- `SUMMARY_MAX_LENGTH`: Maximum length for summary per speaker (default: `400`)
+- `MIN_SPEAKERS`: Minimum number of speakers for diarization (optional)
+- `MAX_SPEAKERS`: Maximum number of speakers for diarization (optional)
 
 ⚠️ **Note**: The script works without a token, but speaker diarization will be disabled. Transcription and summarization will still work.
 
@@ -117,10 +126,16 @@ python main.py audio.mp3 --language fr
 python main.py audio.mp3 --min-speakers 2 --max-speakers 4
 ```
 
+**Specify summary length:**
+
+```bash
+python main.py audio.mp3 --summary-max-length 500
+```
+
 **Complete example with all options:**
 
 ```bash
-python main.py "data/audio_file.mp3" --whisper-model large-v3-turbo --language it --output-dir output --min-speakers 2 --max-speakers 5
+python main.py "data/audio_file.mp3" --whisper-model large-v3-turbo --language it --output-dir output --min-speakers 2 --max-speakers 5 --summary-max-length 500
 ```
 
 ### Available options
@@ -132,12 +147,13 @@ python main.py "data/audio_file.mp3" --whisper-model large-v3-turbo --language i
 - `--device`: Device to use (`cuda`, `cpu`) - Default: auto-detect
 - `--min-speakers`: Minimum number of speakers (optional, uses MIN_SPEAKERS env var if not specified)
 - `--max-speakers`: Maximum number of speakers (optional, uses MAX_SPEAKERS env var if not specified)
+- `--summary-max-length`: Maximum length for summary per speaker (optional, uses SUMMARY_MAX_LENGTH env var if not specified) - Default: `400`
 
 ## 📁 Output
 
 The script generates in the output directory:
 
 - `transcript.txt`: Formatted transcription with speakers
-- `summary.txt`: Summary of the transcribed text
+- `summary.txt`: Summarized content grouped by speaker (each speaker's contributions are summarized separately)
 - `results.json`: Complete JSON with all data
 - `audio_converted.wav`: Audio file converted to WAV 16kHz mono
