@@ -1,0 +1,21 @@
+openai-whisper
+pyannote.audio==3.3.2
+pyannote.core==5.0.0
+pyannote.database==5.1.3
+pyannote.pipeline==3.0.1
+pyannote-metrics==4.0.0rc2
+pydub
+transformers
+torch==2.7.0
+torchaudio==2.7.0
+python-dotenv
+tqdm
+soundfile
+numpy
+torch-audiomentations==0.12.0
+torch_pitch_shift==1.2.5
+torchmetrics==1.7.1
+
+# System dependencies (must be installed separately):
+# - ffmpeg (required for audio conversion if pydub is not available or fails)
+#   Install: brew install ffmpeg (macOS) | apt-get install ffmpeg (Linux) | Download from https://ffmpeg.org (Windows)
