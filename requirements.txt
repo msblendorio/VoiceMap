@@ -1,20 +1,21 @@
-openai-whisper
+matplotlib==3.10.7
+numpy==2.3.4
+openai-whisper==20250625
 pyannote.audio==3.3.2
 pyannote.core==5.0.0
 pyannote.database==5.1.3
 pyannote.pipeline==3.0.1
 pyannote-metrics==4.0.0rc2
-pydub
-transformers
+pydub==0.25.1
+python-dotenv==1.2.1
+soundfile==0.13.1
 torch==2.7.0
-torchaudio==2.7.0
-python-dotenv
-tqdm
-soundfile
-numpy
 torch-audiomentations==0.12.0
 torch_pitch_shift==1.2.5
+torchaudio==2.7.0
 torchmetrics==1.7.1
+transformers==4.57.1
+tqdm==4.67.1
 
 # System dependencies (must be installed separately):
 # - ffmpeg (required for audio conversion if pydub is not available or fails)
