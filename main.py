@@ -507,7 +507,7 @@ class AudioTranscriber:
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Audio transcription with speaker diarization and summarization")
+    parser = argparse.ArgumentParser(description="VoiceMap: Audio transcription with speaker diarization and AI-powered summarization")
     parser.add_argument("audio_file", type=str, help="Path to the MPEG audio file to process")
     parser.add_argument("--whisper-model", type=str, default="large-v3-turbo", help="Whisper model name (e.g., tiny, base, small, medium, large, large-v3-turbo). Default: large-v3-turbo")
     parser.add_argument("--hf-token", type=str, default=None, help="HuggingFace token for pyannote (optional, uses HF_TOKEN env var if not specified)")
