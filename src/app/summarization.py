@@ -11,7 +11,7 @@ from transformers import pipeline
 def load_summarizer(device: str = None) -> pipeline:
     """Load summarization model."""
     if device is None:
-        device = "cuda" if torch.cuda.is_available() else "cpu"
+        device = "cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu"
     
     with tqdm(desc="Loading summarization model", unit="model", total=1) as pbar:
         start_time = time.time()
@@ -19,7 +19,7 @@ def load_summarizer(device: str = None) -> pipeline:
             summarizer = pipeline(
                 "summarization",
                 model="it5/it5-efficient-small-el32-news-summarization",
-                device=0 if device == "cuda" else -1
+                device=device
             )
         pbar.update(1)
         pbar.set_postfix({"time": f"{time.time() - start_time:.1f}s"})

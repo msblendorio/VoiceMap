@@ -12,7 +12,7 @@ from utils import Pipeline, Annotation
 def load_diarization_pipeline(hf_token: str, device: str = None) -> Tuple[Optional[Pipeline], bool]:
     """Load speaker diarization pipeline."""
     if device is None:
-        device = "cuda" if torch.cuda.is_available() else "cpu"
+        device = "cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu"
     
     if not hf_token:
         print("WARNING: HuggingFace token not provided. Speaker diarization disabled.")
@@ -25,7 +25,7 @@ def load_diarization_pipeline(hf_token: str, device: str = None) -> Tuple[Option
                 "pyannote/speaker-diarization-3.1",
                 use_auth_token=hf_token
             )
-            if device == "cuda":
+            if device != "cpu":
                 pipeline.to(torch.device(device))
             pbar.update(1)
             pbar.set_postfix({"time": f"{time.time() - start_time:.1f}s"})

@@ -208,3 +208,6 @@ __marimo__/
 
 data/
 src/app/output/
+
+# VoiceMap results (may contain sensitive transcripts)
+output*/

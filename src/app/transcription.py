@@ -19,11 +19,17 @@ if not FFMPEG_AVAILABLE:
 def load_whisper_model(model_name: str, device: str = None) -> whisper.Whisper:
     """Load Whisper model."""
     if device is None:
-        device = "cuda" if torch.cuda.is_available() else "cpu"
+        device = "cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu"
     
     with tqdm(desc=f"Loading Whisper model '{model_name}'", unit="model", total=1) as pbar:
         start_time = time.time()
-        model = whisper.load_model(model_name, device=device)
+        if device == "mps":
+            # MPS doesn't support sparse tensors: densify alignment_heads before moving
+            model = whisper.load_model(model_name, device="cpu")
+            model.register_buffer("alignment_heads", model.alignment_heads.to_dense(), persistent=False)
+            model = model.to(device)
+        else:
+            model = whisper.load_model(model_name, device=device)
         pbar.update(1)
         pbar.set_postfix({"time": f"{time.time() - start_time:.1f}s"})
     

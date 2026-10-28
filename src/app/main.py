@@ -23,7 +23,7 @@ def process_audio(audio_path: str, output_dir: str = "output", language: str = "
     output_dir.mkdir(exist_ok=True, parents=True)
     
     if device is None:
-        device = "cuda" if torch.cuda.is_available() else "cpu"
+        device = "cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu"
     
     print(f"Using device: {device}\n")
     
@@ -142,7 +142,7 @@ def main():
     parser.add_argument("--whisper-model", type=str, default="large-v3-turbo", help="Whisper model name (e.g., tiny, base, small, medium, large, large-v3-turbo). Default: large-v3-turbo")
     parser.add_argument("--hf-token", type=str, default=None, help="HuggingFace token for pyannote (optional, uses HF_TOKEN env var if not specified)")
     parser.add_argument("--output-dir", type=str, default="output", help="Directory to save results (default: output)")
-    parser.add_argument("--device", type=str, choices=["cuda", "cpu"], help="Device to use (auto-detect if not specified)")
+    parser.add_argument("--device", type=str, choices=["cuda", "mps", "cpu"], help="Device to use (auto-detect if not specified)")
     parser.add_argument("--language", type=str, default="it", help="Language code for transcription (e.g., it, en, es, fr, de). Default: it (Italian)")
     parser.add_argument("--min-speakers", type=int, default=None, help="Minimum number of speakers (uses MIN_SPEAKERS env var if not specified)")
     parser.add_argument("--max-speakers", type=int, default=None, help="Maximum number of speakers (uses MAX_SPEAKERS env var if not specified)")
