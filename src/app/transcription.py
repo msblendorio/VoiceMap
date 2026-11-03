@@ -74,7 +74,9 @@ def transcribe(audio_path: Path, whisper_model: whisper.Whisper, language: str =
     """Transcribe audio file using Whisper."""
     with tqdm(desc="Transcribing with Whisper", unit="step", total=1) as pbar:
         start_time = time.time()
-        result = whisper_model.transcribe(str(audio_path), language=language, verbose=False)
+        result = whisper_model.transcribe(str(audio_path), language=language, verbose=False,
+                                       # ponytail: stops repetition/hallucination loops on long meetings
+                                       condition_on_previous_text=False)
         pbar.update(1)
         pbar.set_postfix({"time": f"{time.time() - start_time:.1f}s"})
         return result
